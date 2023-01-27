@@ -193,33 +193,10 @@ class BitVector {
   /// Computes number of zero bits following lowest-order one-bit in 64-bit int.
   static int _numberOfTrailingZeros64(int i) {
     if (i == 0) return 64;
-    var x = i;
-    var n = 63;
-    var y = x << 32;
-    if (y != 0) {
-      n -= 32;
-      x = y;
+    final lowestBit = i & -i;
+    if (lowestBit == -9223372036854775808) {
+      return 63;
     }
-    y = x << 16;
-    if (y != 0) {
-      n -= 16;
-      x = y;
-    }
-    y = x << 8;
-    if (y != 0) {
-      n -= 8;
-      x = y;
-    }
-    y = x << 4;
-    if (y != 0) {
-      n -= 4;
-      x = y;
-    }
-    y = x << 2;
-    if (y != 0) {
-      n -= 2;
-      x = y;
-    }
-    return n - ((x << 1) >> 63);
+    return lowestBit.bitLength - 1;
   }
 }
