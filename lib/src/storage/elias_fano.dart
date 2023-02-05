@@ -4,6 +4,12 @@ import '../utils/bit_vector.dart';
 import 'byte_buffer.dart';
 import 'vbyte.dart';
 
+int _computeLowBitsLength(int count, int universe) {
+  if (count <= 0 || universe < count) return 0;
+  final val = (math.log(universe / count) / math.ln2).floor();
+  return val > 0 ? val : 0;
+}
+
 /// Elias-Fano quasi-succinct representation of non-decreasing integer sequences.
 /// Provides optimal theoretical compression for sorted doc IDs with O(1) random access.
 class EliasFanoEncoder {
@@ -17,15 +23,11 @@ class EliasFanoEncoder {
 
   /// Creates an encoder for [count] non-decreasing integers with maximum value [universe].
   EliasFanoEncoder(this.count, this.universe)
-      : lowBitsLength = count > 0 && universe >= count
-            ? math.max(0, (math.log(universe / count) / math.ln2).floor())
-            : 0,
-        _highBits = BitVector(count + (universe >> (count > 0 && universe >= count
-            ? math.max(0, (math.log(universe / count) / math.ln2).floor())
-            : 0)) + 64),
-        _lowBits = Uint8List(((count * (count > 0 && universe >= count
-            ? math.max(0, (math.log(universe / count) / math.ln2).floor())
-            : 0)) + 7) >> 3);
+      : lowBitsLength = _computeLowBitsLength(count, universe),
+        _highBits = BitVector(
+            count + (universe >> _computeLowBitsLength(count, universe)) + 64),
+        _lowBits = Uint8List(
+            (((count * _computeLowBitsLength(count, universe)) + 7) ~/ 8));
 
   /// Number of encoded elements.
   int get length => _currentIndex;
@@ -86,9 +88,6 @@ class EliasFanoEncoder {
     // Write high bits
     final highWords = _highBits.wordsCount;
     VByteCodec.writeVInt(writer, highWords);
-    for (var i = 0; i < highWords; i++) {
-      // Direct raw serialization of bitvector words
-    }
     final rawBits = _highBits.cardinality();
     VByteCodec.writeVInt(writer, rawBits);
     // Write bit offsets
