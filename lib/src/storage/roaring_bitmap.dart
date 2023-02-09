@@ -472,3 +472,352 @@ class BitmapContainer extends Container {
     return (n * 0x0101010101010101) >> 56;
   }
 }
+
+/// Run-length encoded container for dense contiguous integer runs.
+class RunContainer extends Container {
+  final List<int> _starts = [];
+  final List<int> _lengths = []; // length - 1 (0 means 1 element)
+
+  RunContainer();
+
+  RunContainer._from(List<int> starts, List<int> lengths) {
+    _starts.addAll(starts);
+    _lengths.addAll(lengths);
+  }
+
+  @override
+  int get cardinality {
+    var total = 0;
+    for (var i = 0; i < _starts.length; i++) {
+      total += _lengths[i] + 1;
+    }
+    return total;
+  }
+
+  @override
+  bool contains(int value) {
+    var low = 0;
+    var high = _starts.length - 1;
+    while (low <= high) {
+      final mid = (low + high) >> 1;
+      final start = _starts[mid];
+      final end = start + _lengths[mid];
+      if (value < start) {
+        high = mid - 1;
+      } else if (value > end) {
+        low = mid + 1;
+      } else {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  @override
+  Container add(int value) {
+    if (contains(value)) return this;
+    // Fall back to converting to Bitmap or inserting run
+    final list = toList();
+    list.add(value);
+    list.sort();
+    return RunContainer.fromList(list);
+  }
+
+  @override
+  Container remove(int value) {
+    if (!contains(value)) return this;
+    final list = toList()..remove(value);
+    return RunContainer.fromList(list);
+  }
+
+  @override
+  Container clone() => RunContainer._from(_starts, _lengths);
+
+  @override
+  Container and(Container other) {
+    final result = <int>[];
+    for (final val in toList()) {
+      if (other.contains(val)) result.add(val);
+    }
+    return RunContainer.fromList(result);
+  }
+
+  @override
+  Container or(Container other) {
+    final set = toList().toSet()..addAll(other.toList());
+    final sorted = set.toList()..sort();
+    return RunContainer.fromList(sorted);
+  }
+
+  @override
+  Container xor(Container other) {
+    final setA = toList().toSet();
+    final setB = other.toList().toSet();
+    final xorSet = setA.difference(setB).union(setB.difference(setA));
+    final sorted = xorSet.toList()..sort();
+    return RunContainer.fromList(sorted);
+  }
+
+  @override
+  Container andNot(Container other) {
+    final list = <int>[];
+    for (final val in toList()) {
+      if (!other.contains(val)) list.add(val);
+    }
+    return RunContainer.fromList(list);
+  }
+
+  @override
+  List<int> toList() {
+    final result = <int>[];
+    for (var i = 0; i < _starts.length; i++) {
+      final start = _starts[i];
+      final count = _lengths[i] + 1;
+      for (var j = 0; j < count; j++) {
+        result.add(start + j);
+      }
+    }
+    return result;
+  }
+
+  @override
+  void serialize(ByteBufferWriter writer) {
+    writer.writeByte(3); // Type 3: RunContainer
+    VByteCodec.writeVInt(writer, _starts.length);
+    for (var i = 0; i < _starts.length; i++) {
+      writer.writeInt16(_starts[i]);
+      writer.writeInt16(_lengths[i]);
+    }
+  }
+
+  static RunContainer deserialize(ByteBufferReader reader) {
+    final numRuns = VByteCodec.readVInt(reader);
+    final starts = <int>[];
+    final lengths = <int>[];
+    for (var i = 0; i < numRuns; i++) {
+      starts.add(reader.readInt16() & 0xFFFF);
+      lengths.add(reader.readInt16() & 0xFFFF);
+    }
+    return RunContainer._from(starts, lengths);
+  }
+
+  /// Constructs RunContainer from sorted list of 16-bit integers.
+  factory RunContainer.fromList(List<int> sorted) {
+    final rc = RunContainer();
+    if (sorted.isEmpty) return rc;
+
+    var start = sorted[0];
+    var len = 0;
+
+    for (var i = 1; i < sorted.length; i++) {
+      final val = sorted[i];
+      if (val == start + len + 1) {
+        len++;
+      } else {
+        rc._starts.add(start);
+        rc._lengths.add(len);
+        start = val;
+        len = 0;
+      }
+    }
+    rc._starts.add(start);
+    rc._lengths.add(len);
+    return rc;
+  }
+}
+
+/// RoaringBitmap: High-performance compressed bitmap index for 32-bit unsigned integers.
+class RoaringBitmap {
+  final Map<int, Container> _containers = {};
+
+  /// Creates an empty RoaringBitmap.
+  RoaringBitmap();
+
+  /// Total number of unique 32-bit integers stored.
+  int get cardinality {
+    var count = 0;
+    for (final c in _containers.values) {
+      count += c.cardinality;
+    }
+    return count;
+  }
+
+  /// Checks if bitmap contains zero elements.
+  bool get isEmpty => _containers.isEmpty;
+
+  /// Checks if bitmap contains at least one element.
+  bool get isNotEmpty => _containers.isNotEmpty;
+
+  /// Adds a 32-bit integer (0 to 4294967295) to the bitmap.
+  void add(int value) {
+    final chunkKey = (value >> 16) & 0xFFFF;
+    final low16 = value & 0xFFFF;
+
+    final existing = _containers[chunkKey];
+    if (existing == null) {
+      final arr = ArrayContainer()..add(low16);
+      _containers[chunkKey] = arr;
+    } else {
+      _containers[chunkKey] = existing.add(low16);
+    }
+  }
+
+  /// Adds an entire list of 32-bit integers.
+  void addAll(Iterable<int> values) {
+    for (final v in values) {
+      add(v);
+    }
+  }
+
+  /// Removes a 32-bit integer from the bitmap.
+  void remove(int value) {
+    final chunkKey = (value >> 16) & 0xFFFF;
+    final low16 = value & 0xFFFF;
+
+    final existing = _containers[chunkKey];
+    if (existing != null) {
+      final updated = existing.remove(low16);
+      if (updated.cardinality == 0) {
+        _containers.remove(chunkKey);
+      } else {
+        _containers[chunkKey] = updated;
+      }
+    }
+  }
+
+  /// Checks if 32-bit integer is present in the bitmap.
+  bool contains(int value) {
+    final chunkKey = (value >> 16) & 0xFFFF;
+    final low16 = value & 0xFFFF;
+    final container = _containers[chunkKey];
+    if (container == null) return false;
+    return container.contains(low16);
+  }
+
+  /// Clears all elements.
+  void clear() {
+    _containers.clear();
+  }
+
+  /// Creates a deep copy of this bitmap.
+  RoaringBitmap clone() {
+    final copy = RoaringBitmap();
+    for (final entry in _containers.entries) {
+      copy._containers[entry.key] = entry.value.clone();
+    }
+    return copy;
+  }
+
+  /// Computes intersection (AND) with [other], returning a new RoaringBitmap.
+  RoaringBitmap and(RoaringBitmap other) {
+    final result = RoaringBitmap();
+    for (final entry in _containers.entries) {
+      final otherContainer = other._containers[entry.key];
+      if (otherContainer != null) {
+        final intersection = entry.value.and(otherContainer);
+        if (intersection.cardinality > 0) {
+          result._containers[entry.key] = intersection;
+        }
+      }
+    }
+    return result;
+  }
+
+  /// Computes union (OR) with [other], returning a new RoaringBitmap.
+  RoaringBitmap or(RoaringBitmap other) {
+    final result = clone();
+    for (final entry in other._containers.entries) {
+      final existing = result._containers[entry.key];
+      if (existing == null) {
+        result._containers[entry.key] = entry.value.clone();
+      } else {
+        result._containers[entry.key] = existing.or(entry.value);
+      }
+    }
+    return result;
+  }
+
+  /// Computes symmetric difference (XOR) with [other], returning a new RoaringBitmap.
+  RoaringBitmap xor(RoaringBitmap other) {
+    final result = RoaringBitmap();
+    final allKeys = {..._containers.keys, ...other._containers.keys};
+    for (final key in allKeys) {
+      final a = _containers[key];
+      final b = other._containers[key];
+      if (a != null && b != null) {
+        final diff = a.xor(b);
+        if (diff.cardinality > 0) {
+          result._containers[key] = diff;
+        }
+      } else if (a != null) {
+        result._containers[key] = a.clone();
+      } else if (b != null) {
+        result._containers[key] = b.clone();
+      }
+    }
+    return result;
+  }
+
+  /// Computes set difference (this AND NOT other), returning a new RoaringBitmap.
+  RoaringBitmap andNot(RoaringBitmap other) {
+    final result = RoaringBitmap();
+    for (final entry in _containers.entries) {
+      final otherContainer = other._containers[entry.key];
+      if (otherContainer == null) {
+        result._containers[entry.key] = entry.value.clone();
+      } else {
+        final diff = entry.value.andNot(otherContainer);
+        if (diff.cardinality > 0) {
+          result._containers[entry.key] = diff;
+        }
+      }
+    }
+    return result;
+  }
+
+  /// Decodes all elements in the bitmap into an ordered list of 32-bit integers.
+  List<int> toList() {
+    final list = <int>[];
+    final keys = _containers.keys.toList()..sort();
+    for (final key in keys) {
+      final high32 = key << 16;
+      final lowList = _containers[key]!.toList();
+      for (var i = 0; i < lowList.length; i++) {
+        list.add(high32 | lowList[i]);
+      }
+    }
+    return list;
+  }
+
+  /// Serializes RoaringBitmap into binary writer.
+  void serialize(ByteBufferWriter writer) {
+    final keys = _containers.keys.toList()..sort();
+    VByteCodec.writeVInt(writer, keys.length);
+    for (final key in keys) {
+      writer.writeInt16(key);
+      _containers[key]!.serialize(writer);
+    }
+  }
+
+  /// Deserializes RoaringBitmap from binary reader.
+  factory RoaringBitmap.deserialize(ByteBufferReader reader) {
+    final result = RoaringBitmap();
+    final numContainers = VByteCodec.readVInt(reader);
+    for (var i = 0; i < numContainers; i++) {
+      final key = reader.readInt16() & 0xFFFF;
+      final type = reader.readByte();
+      final Container container;
+      if (type == 1) {
+        container = ArrayContainer.deserialize(reader);
+      } else if (type == 2) {
+        container = BitmapContainer.deserialize(reader);
+      } else if (type == 3) {
+        container = RunContainer.deserialize(reader);
+      } else {
+        throw FormatException('Unknown RoaringBitmap container type: $type');
+      }
+      result._containers[key] = container;
+    }
+    return result;
+  }
+}
