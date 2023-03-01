@@ -66,18 +66,25 @@ class WriteAheadLog {
   /// Opens or creates the WAL file, reading existing LSN if present.
   void open() {
     _checkNotClosed();
+    Uint8List existingBytes = Uint8List(0);
     if (_directory.fileExists(_fileName)) {
+      final input = _directory.openInput(_fileName);
+      existingBytes = input.readBytes(input.length);
+      input.close();
+
       final records = recover();
       if (records.isNotEmpty) {
         _nextLsn = records.last.lsn + 1;
       }
-    } else {
-      final out = _directory.createOutput(_fileName);
-      out.writeInt32(magicHeader);
-      out.writeInt32(walVersion);
-      out.close();
     }
+
     _output = _directory.createOutput(_fileName);
+    if (existingBytes.isNotEmpty) {
+      _output!.writeBytes(existingBytes);
+    } else {
+      _output!.writeInt32(magicHeader);
+      _output!.writeInt32(walVersion);
+    }
   }
 
   /// Appends an insert document record to the WAL.
@@ -198,12 +205,9 @@ class WriteAheadLog {
     _output?.close();
     _directory.deleteFile(_fileName);
 
-    final out = _directory.createOutput(_fileName);
-    out.writeInt32(magicHeader);
-    out.writeInt32(walVersion);
-    out.close();
-
     _output = _directory.createOutput(_fileName);
+    _output!.writeInt32(magicHeader);
+    _output!.writeInt32(walVersion);
     _nextLsn = 1;
   }
 
