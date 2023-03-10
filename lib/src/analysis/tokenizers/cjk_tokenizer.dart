@@ -23,7 +23,7 @@ class CJKTokenizer extends TokenStream {
       }
 
       if (_isCJK(code)) {
-        // CJK character: produce 1-gram or 2-gram with next CJK character
+        // CJK character: produce 2-gram with next CJK character
         if (i + 1 < len && _isCJK(_text.codeUnitAt(i + 1))) {
           _tokens.add(Token(
             term: _text.substring(i, i + 2),
@@ -31,7 +31,7 @@ class CJKTokenizer extends TokenStream {
             endOffset: i + 2,
             positionIncrement: 1,
           ));
-        } else {
+        } else if (i == 0 || !_isCJK(_text.codeUnitAt(i - 1))) {
           _tokens.add(Token(
             term: _text.substring(i, i + 1),
             startOffset: i,
