@@ -15,10 +15,12 @@ class Fst {
 
   Fst(this.root);
 
-  /// Builds a minimal FST from a sorted sequence of (BytesRef, int output) entries.
+  /// Builds a minimal FST from a sequence of (BytesRef, int output) entries, sorting them lexicographically.
   factory Fst.fromSortedEntries(List<MapEntry<BytesRef, int>> entries) {
+    final sorted = List<MapEntry<BytesRef, int>>.from(entries)
+      ..sort((a, b) => a.key.compareTo(b.key));
     final builder = FstBuilder();
-    for (final entry in entries) {
+    for (final entry in sorted) {
       builder.add(entry.key, entry.value);
     }
     return Fst(builder.finish());
