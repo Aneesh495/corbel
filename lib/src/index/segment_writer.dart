@@ -1,10 +1,10 @@
 import 'dart:convert';
 import 'dart:typed_data';
-import '../../analysis/analyzer.dart';
-import '../../core/document.dart';
-import '../../core/schema.dart';
-import '../../storage/directory.dart';
-import '../../utils/bytes_ref.dart';
+import '../analysis/analyzer.dart';
+import '../core/document.dart';
+import '../core/schema.dart';
+import '../storage/directory.dart';
+import '../utils/bytes_ref.dart';
 import 'docvalues/binary_doc_values.dart';
 import 'docvalues/numeric_doc_values.dart';
 import 'docvalues/sorted_set_doc_values.dart';

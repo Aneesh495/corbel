@@ -1,7 +1,5 @@
 import 'dart:convert';
-import 'dart:typed_data';
 import '../../storage/index_input.dart';
-import '../../storage/vbyte.dart';
 
 /// Block-compressed document stored fields reader providing O(1) document retrieval.
 class StoredFieldsReader {
@@ -31,8 +29,8 @@ class StoredFieldsReader {
     final docIndices = List<int>.filled(docCount, 0);
 
     for (var i = 0; i < docCount; i++) {
-      blockOffsets[i] = VByteCodec.readVLong(indexIn);
-      docIndices[i] = VByteCodec.readVInt(indexIn);
+      blockOffsets[i] = indexIn.readVLong();
+      docIndices[i] = indexIn.readVInt();
     }
 
     return StoredFieldsReader._(
@@ -56,9 +54,9 @@ class StoredFieldsReader {
     final input = dataIn.clone();
     input.seek(blockOffset);
 
-    final numDocsInBlock = VByteCodec.readVInt(input);
+    final numDocsInBlock = input.readVInt();
     for (var i = 0; i < numDocsInBlock; i++) {
-      final len = VByteCodec.readVInt(input);
+      final len = input.readVInt();
       if (i == docIdxInBlock) {
         final bytes = input.readBytes(len);
         final jsonStr = utf8.decode(bytes);

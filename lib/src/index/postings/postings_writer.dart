@@ -29,7 +29,7 @@ class PostingsWriter {
     final startOffset = out.position;
     final docCount = postings.length;
 
-    VByteCodec.writeVInt(out, docCount);
+    out.writeVInt(docCount);
     if (docCount == 0) return startOffset;
 
     // Build skip list if docCount > skipInterval
@@ -66,15 +66,15 @@ class PostingsWriter {
     }
 
     // Write skip list table
-    VByteCodec.writeVInt(out, skipEntries.length);
+    out.writeVInt(skipEntries.length);
     for (final skip in skipEntries) {
-      VByteCodec.writeVInt(out, skip.docId);
-      VByteCodec.writeVInt(out, skip.offset);
+      out.writeVInt(skip.docId);
+      out.writeVInt(skip.offset);
     }
 
     // Write raw postings byte buffer
     final rawPostings = postingsBuffer.toBytes();
-    VByteCodec.writeVInt(out, rawPostings.length);
+    out.writeVInt(rawPostings.length);
     out.writeBytes(rawPostings);
 
     return startOffset;

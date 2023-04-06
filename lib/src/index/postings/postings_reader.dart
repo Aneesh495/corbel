@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import '../../storage/byte_buffer.dart';
 import '../../storage/index_input.dart';
 import '../../storage/vbyte.dart';

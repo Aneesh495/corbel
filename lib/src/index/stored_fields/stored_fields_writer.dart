@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import '../../storage/index_output.dart';
-import '../../storage/vbyte.dart';
 
 /// Block-compressed document stored fields writer.
 class StoredFieldsWriter {
@@ -39,14 +38,14 @@ class StoredFieldsWriter {
 
     // Write index pointers for each doc in block
     for (var i = 0; i < _currentBlock.length; i++) {
-      VByteCodec.writeVLong(indexOut, blockOffset);
-      VByteCodec.writeVInt(indexOut, i); // doc index inside block
+      indexOut.writeVLong(blockOffset);
+      indexOut.writeVInt(i); // doc index inside block
     }
 
     // Write block data payload
-    VByteCodec.writeVInt(dataOut, _currentBlock.length);
+    dataOut.writeVInt(_currentBlock.length);
     for (final bytes in blockBytes) {
-      VByteCodec.writeVInt(dataOut, bytes.length);
+      dataOut.writeVInt(bytes.length);
       dataOut.writeBytes(bytes);
     }
 

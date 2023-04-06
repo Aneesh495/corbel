@@ -1,7 +1,7 @@
-import '../../core/schema.dart';
-import '../../storage/index_input.dart';
-import '../../storage/index_output.dart';
-import '../../storage/vbyte.dart';
+import '../core/schema.dart';
+import '../storage/index_input.dart';
+import '../storage/index_output.dart';
+import '../storage/vbyte.dart';
 
 /// Immutable metadata describing an individual index segment.
 class SegmentInfo {
@@ -38,10 +38,10 @@ class SegmentInfo {
   /// Serializes segment info to output stream.
   void serialize(IndexOutput out) {
     out.writeString(name);
-    VByteCodec.writeVInt(out, maxDoc);
-    VByteCodec.writeVInt(out, delCount);
-    VByteCodec.writeVLong(out, sizeInBytes);
-    VByteCodec.writeVInt(out, version);
+    out.writeVInt(maxDoc);
+    out.writeVInt(delCount);
+    out.writeVLong(sizeInBytes);
+    out.writeVInt(version);
   }
 
   /// Deserializes segment info from input stream.

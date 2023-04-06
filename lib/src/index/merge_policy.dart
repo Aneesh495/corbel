@@ -1,7 +1,7 @@
 import 'dart:math' as math;
-import '../../core/document.dart';
-import '../../core/schema.dart';
-import '../../storage/directory.dart';
+import '../core/document.dart';
+import '../core/schema.dart';
+import '../storage/directory.dart';
 import 'deletion_vector.dart';
 import 'segment_info.dart';
 import 'segment_reader.dart';

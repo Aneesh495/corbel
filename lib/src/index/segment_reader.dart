@@ -1,7 +1,7 @@
-import '../../core/schema.dart';
-import '../../storage/directory.dart';
-import '../../storage/index_input.dart';
-import '../../storage/vbyte.dart';
+import '../core/schema.dart';
+import '../storage/directory.dart';
+import '../storage/index_input.dart';
+import '../storage/vbyte.dart';
 import 'deletion_vector.dart';
 import 'docvalues/binary_doc_values.dart';
 import 'docvalues/numeric_doc_values.dart';

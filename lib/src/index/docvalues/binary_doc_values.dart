@@ -1,7 +1,6 @@
 import 'dart:typed_data';
 import '../../storage/index_input.dart';
 import '../../storage/index_output.dart';
-import '../../storage/vbyte.dart';
 import '../../utils/bytes_ref.dart';
 
 /// Columnar binary DocValues storing arbitrary byte slices per document.
@@ -15,7 +14,7 @@ class BinaryDocValues {
   /// Writes binary DocValues to output stream.
   static void write(IndexOutput out, List<Uint8List> values) {
     final count = values.length;
-    VByteCodec.writeVInt(out, count);
+    out.writeVInt(count);
     if (count == 0) return;
 
     var totalBytes = 0;
@@ -23,10 +22,10 @@ class BinaryDocValues {
       totalBytes += v.length;
     }
 
-    VByteCodec.writeVInt(out, totalBytes);
+    out.writeVInt(totalBytes);
     var currentOffset = 0;
     for (final v in values) {
-      VByteCodec.writeVInt(out, v.length);
+      out.writeVInt(v.length);
       out.writeBytes(v);
       currentOffset += v.length;
     }

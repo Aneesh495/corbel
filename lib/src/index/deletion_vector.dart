@@ -1,8 +1,8 @@
-import '../../storage/byte_buffer.dart';
-import '../../storage/index_input.dart';
-import '../../storage/index_output.dart';
-import '../../storage/roaring_bitmap.dart';
-import '../../storage/vbyte.dart';
+import '../storage/byte_buffer.dart';
+import '../storage/index_input.dart';
+import '../storage/index_output.dart';
+import '../storage/roaring_bitmap.dart';
+import '../storage/vbyte.dart';
 
 /// Tracks soft-deleted document IDs within an index segment using RoaringBitmaps.
 class DeletionVector {
@@ -36,11 +36,11 @@ class DeletionVector {
 
   /// Serializes deletion vector to output stream.
   void serialize(IndexOutput out) {
-    VByteCodec.writeVInt(out, _delGen);
+    out.writeVInt(_delGen);
     final writer = ByteBufferWriter();
     _deletedDocs.serialize(writer);
     final bytes = writer.toBytes();
-    VByteCodec.writeVInt(out, bytes.length);
+    out.writeVInt(bytes.length);
     out.writeBytes(bytes);
   }
 

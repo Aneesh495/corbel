@@ -1,6 +1,5 @@
 import '../../storage/index_input.dart';
 import '../../storage/index_output.dart';
-import '../../storage/vbyte.dart';
 
 /// Multi-valued sorted set DocValues for categorical terms and facet aggregations.
 class SortedSetDocValues {
@@ -13,7 +12,7 @@ class SortedSetDocValues {
   /// Writes SortedSetDocValues to output stream.
   static void write(IndexOutput out, List<List<String>> docTerms) {
     final count = docTerms.length;
-    VByteCodec.writeVInt(out, count);
+    out.writeVInt(count);
     if (count == 0) return;
 
     // Build global sorted dictionary of unique terms
@@ -28,7 +27,7 @@ class SortedSetDocValues {
     }
 
     // Write dictionary
-    VByteCodec.writeVInt(out, sortedDict.length);
+    out.writeVInt(sortedDict.length);
     for (final term in sortedDict) {
       out.writeString(term);
     }
@@ -36,10 +35,10 @@ class SortedSetDocValues {
     // Write ordinals per document
     for (final terms in docTerms) {
       final ords = terms.map((t) => termToOrd[t]!).toList()..sort();
-      VByteCodec.writeVInt(out, ords.length);
+      out.writeVInt(ords.length);
       var prev = 0;
       for (final ord in ords) {
-        VByteCodec.writeVInt(out, ord - prev);
+        out.writeVInt(ord - prev);
         prev = ord;
       }
     }

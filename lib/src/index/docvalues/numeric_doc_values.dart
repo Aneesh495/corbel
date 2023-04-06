@@ -1,8 +1,6 @@
-import 'dart:math' as math;
 import 'dart:typed_data';
 import '../../storage/index_input.dart';
 import '../../storage/index_output.dart';
-import '../../storage/vbyte.dart';
 
 /// Columnar 64-bit integer DocValues with GCD and delta-offset compression.
 class NumericDocValues {
@@ -23,7 +21,7 @@ class NumericDocValues {
   /// Builds and serializes compressed NumericDocValues into output stream.
   static void write(IndexOutput out, List<int> values) {
     final count = values.length;
-    VByteCodec.writeVInt(out, count);
+    out.writeVInt(count);
     if (count == 0) return;
 
     var minVal = values[0];
@@ -47,8 +45,8 @@ class NumericDocValues {
     final maxDividedDelta = (maxVal - minVal) ~/ currentGcd;
     final int numBits = maxDividedDelta == 0 ? 0 : maxDividedDelta.bitLength;
 
-    VByteCodec.writeZLong(out, minVal);
-    VByteCodec.writeVLong(out, currentGcd);
+    out.writeZLong(minVal);
+    out.writeVLong(currentGcd);
     out.writeByte(numBits);
 
     if (numBits == 0) return; // All values are identical to minVal
@@ -76,7 +74,7 @@ class NumericDocValues {
       }
     }
 
-    VByteCodec.writeVInt(out, packedBytes.length);
+    out.writeVInt(packedBytes.length);
     out.writeBytes(packedBytes);
   }
 
