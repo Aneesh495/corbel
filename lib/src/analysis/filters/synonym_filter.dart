@@ -1,5 +1,4 @@
 import '../token.dart';
-import '../token_stream.dart';
 import 'token_filter.dart';
 
 /// Synonym filter expanding matching terms with synonym tokens at positionIncrement = 0.

@@ -110,7 +110,7 @@ void main() {
         throwsA(isA<ArgumentError>().having(
           (e) => e.message,
           'message',
-          contains("expects int, got String"),
+          contains('expects int, got String'),
         )),
       );
     });
@@ -168,13 +168,13 @@ void main() {
 
   group('Exception Hierarchy Tests', () {
     test('exceptions provide informative strings', () {
-      final corrupt = CorbelCorruptIndexException('Segment CRC mismatch');
+      final corrupt = const CorbelCorruptIndexException('Segment CRC mismatch');
       expect(corrupt.toString(), contains('CorbelException: Segment CRC mismatch'));
 
-      final parse = CorbelParseException('Unexpected token', position: 14);
+      final parse = const CorbelParseException('Unexpected token', position: 14);
       expect(parse.toString(), contains('CorbelParseException at offset 14: Unexpected token'));
 
-      final notFound = CorbelNotFoundException('Index does not exist');
+      final notFound = const CorbelNotFoundException('Index does not exist');
       expect(notFound.toString(), contains('CorbelException: Index does not exist'));
     });
   });

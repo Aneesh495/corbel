@@ -15,6 +15,9 @@ class PostingsReader {
   final bool storePositions;
   final bool storeOffsets;
 
+  /// Returns the skip list associated with this postings list.
+  List<SkipEntry> get skipList => _skipList;
+
   int _currentDocId = -1;
   int _currentFreq = 0;
   List<int> _currentPositions = const [];

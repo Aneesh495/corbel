@@ -1,5 +1,4 @@
 import '../token.dart';
-import '../token_stream.dart';
 import 'token_filter.dart';
 
 /// Normalizes token text to lowercase.

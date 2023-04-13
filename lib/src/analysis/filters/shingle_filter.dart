@@ -1,5 +1,4 @@
 import '../token.dart';
-import '../token_stream.dart';
 import 'token_filter.dart';
 
 /// Shingle filter constructing word n-gram tuples from consecutive tokens.

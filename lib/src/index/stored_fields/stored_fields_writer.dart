@@ -10,6 +10,9 @@ class StoredFieldsWriter {
   int _docCount = 0;
   static const int docsPerBlock = 64;
 
+  /// Returns the number of documents written to this stored fields stream.
+  int get docCount => _docCount;
+
   StoredFieldsWriter({
     required this.indexOut,
     required this.dataOut,
@@ -33,7 +36,7 @@ class StoredFieldsWriter {
     final blockBytes = <Uint8List>[];
     for (final str in _currentBlock) {
       final b = utf8.encode(str);
-      blockBytes.add(b is Uint8List ? b : Uint8List.fromList(b));
+      blockBytes.add(b);
     }
 
     // Write index pointers for each doc in block

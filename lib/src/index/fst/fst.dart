@@ -1,9 +1,6 @@
 import 'dart:convert';
-import 'dart:math' as math;
-import '../../storage/byte_buffer.dart';
 import '../../storage/index_input.dart';
 import '../../storage/index_output.dart';
-import '../../storage/vbyte.dart';
 import '../../utils/bytes_ref.dart';
 import 'fst_builder.dart';
 import 'fst_node.dart';

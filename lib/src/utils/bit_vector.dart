@@ -172,7 +172,7 @@ class BitVector {
       _length = requiredBits;
       final requiredWords = (requiredBits + 63) >> 6;
       if (requiredWords > _words.length) {
-        var newCap = _words.length == 0 ? 1 : _words.length * 2;
+        var newCap = _words.isEmpty ? 1 : _words.length * 2;
         if (newCap < requiredWords) newCap = requiredWords;
         final newWords = Uint64List(newCap);
         newWords.setRange(0, _words.length, _words);

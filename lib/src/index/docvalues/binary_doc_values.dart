@@ -23,11 +23,9 @@ class BinaryDocValues {
     }
 
     out.writeVInt(totalBytes);
-    var currentOffset = 0;
     for (final v in values) {
       out.writeVInt(v.length);
       out.writeBytes(v);
-      currentOffset += v.length;
     }
   }
 

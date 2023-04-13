@@ -1,11 +1,9 @@
 import 'dart:math' as math;
 import 'dart:typed_data';
-import '../../core/schema.dart';
-import '../../storage/byte_buffer.dart';
-import '../../storage/index_input.dart';
-import '../../storage/index_output.dart';
-import '../../storage/vbyte.dart';
-import '../../utils/priority_queue.dart';
+import '../core/schema.dart';
+import '../storage/index_input.dart';
+import '../storage/index_output.dart';
+import '../utils/priority_queue.dart';
 import 'distance.dart';
 
 /// Single neighbor distance pair for priority queue sorting.
@@ -71,16 +69,17 @@ class HnswGraph {
     final level = _randomLevel();
 
     // Ensure layers list has enough capacity
-    while (_layers.length <= level) {
+    final targetMax = math.max(level, _maxLayer);
+    while (_layers.length <= targetMax) {
       _layers.add({});
+    }
+    for (var l = 0; l <= level; l++) {
+      _layers[l][docId] = [];
     }
 
     if (_entryPoint == null) {
       _entryPoint = docId;
       _maxLayer = level;
-      for (var l = 0; l <= level; l++) {
-        _layers[l][docId] = [];
-      }
       return;
     }
 

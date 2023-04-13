@@ -1,8 +1,7 @@
 import 'dart:typed_data';
-import '../../core/schema.dart';
-import '../../storage/index_input.dart';
-import '../../storage/index_output.dart';
-import 'distance.dart';
+import '../core/schema.dart';
+import '../storage/index_input.dart';
+import '../storage/index_output.dart';
 import 'hnsw_graph.dart';
 
 /// Top-level vector index managing high-dimensional embeddings for an index field.

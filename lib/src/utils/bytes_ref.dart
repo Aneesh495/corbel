@@ -24,7 +24,7 @@ class BytesRef implements Comparable<BytesRef> {
   factory BytesRef.fromString(String text) {
     final encoded = utf8.encode(text);
     return BytesRef(
-        encoded is Uint8List ? encoded : Uint8List.fromList(encoded));
+        encoded);
   }
 
   /// Factory constructing a BytesRef from a list of ints.

@@ -6,7 +6,6 @@ class PatternTokenizer extends TokenStream {
   final String _text;
   final RegExp _pattern;
   final bool _isDelimiter;
-  int _position = 0;
   Token? _current;
   late final List<Token> _precomputed;
   int _currentIndex = -1;

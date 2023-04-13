@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 import 'dart:typed_data';
-import '../../core/schema.dart';
+import '../core/schema.dart';
 
 /// High-performance vector distance kernels optimized for 32-bit floating point vectors.
 class VectorDistance {

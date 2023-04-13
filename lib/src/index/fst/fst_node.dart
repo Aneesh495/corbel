@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-import '../../utils/bytes_ref.dart';
 
 /// Single outgoing transition arc in an FST state.
 class FstArc {

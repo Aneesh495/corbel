@@ -4,7 +4,6 @@ import '../analysis/analyzer.dart';
 import '../core/document.dart';
 import '../core/schema.dart';
 import '../storage/directory.dart';
-import '../utils/bytes_ref.dart';
 import '../vector/vector_index.dart';
 import 'docvalues/binary_doc_values.dart';
 import 'docvalues/numeric_doc_values.dart';

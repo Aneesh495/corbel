@@ -1,4 +1,3 @@
-import '../token.dart';
 import '../token_stream.dart';
 
 /// Base class for token filters transforming or filtering tokens from an input TokenStream.

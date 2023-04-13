@@ -29,7 +29,7 @@ class PorterStemmer {
   static String _step1b(String b) {
     if (b.endsWith('eed')) {
       final stem = b.substring(0, b.length - 3);
-      if (_measure(stem) > 0) return stem + 'ee';
+      if (_measure(stem) > 0) return '${stem}ee';
       return b;
     }
     if (b.endsWith('ed')) {
@@ -47,7 +47,7 @@ class PorterStemmer {
 
   static String _step1b2(String stem) {
     if (stem.endsWith('at') || stem.endsWith('bl') || stem.endsWith('iz')) {
-      return stem + 'e';
+      return '${stem}e';
     }
     if (_doubleConsonant(stem) &&
         !stem.endsWith('l') &&
@@ -56,7 +56,7 @@ class PorterStemmer {
       return stem.substring(0, stem.length - 1);
     }
     if (_measure(stem) == 1 && _cvc(stem)) {
-      return stem + 'e';
+      return '${stem}e';
     }
     return stem;
   }
@@ -64,7 +64,7 @@ class PorterStemmer {
   static String _step1c(String b) {
     if (b.endsWith('y')) {
       final stem = b.substring(0, b.length - 1);
-      if (_hasVowel(stem)) return stem + 'i';
+      if (_hasVowel(stem)) return '${stem}i';
     }
     return b;
   }

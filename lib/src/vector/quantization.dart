@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 import 'dart:typed_data';
 
 /// 8-bit uniform scalar quantizer reducing vector memory footprint by 75%.

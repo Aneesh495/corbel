@@ -1,5 +1,4 @@
 import '../token.dart';
-import '../token_stream.dart';
 import 'token_filter.dart';
 
 /// Filters out tokens whose character length is outside [min] and [max].

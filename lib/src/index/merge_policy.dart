@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 import '../core/document.dart';
 import '../core/schema.dart';
 import '../storage/directory.dart';

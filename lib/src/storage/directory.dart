@@ -1,6 +1,5 @@
 import 'dart:io' as io;
 import 'dart:typed_data';
-import 'checksum.dart';
 import 'index_input.dart';
 import 'index_output.dart';
 

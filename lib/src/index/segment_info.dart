@@ -1,7 +1,6 @@
 import '../core/schema.dart';
 import '../storage/index_input.dart';
 import '../storage/index_output.dart';
-import '../storage/vbyte.dart';
 
 /// Immutable metadata describing an individual index segment.
 class SegmentInfo {

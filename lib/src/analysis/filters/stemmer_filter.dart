@@ -1,5 +1,4 @@
 import '../token.dart';
-import '../token_stream.dart';
 import 'porter_stemmer.dart';
 import 'token_filter.dart';
 

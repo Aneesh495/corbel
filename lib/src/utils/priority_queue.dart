@@ -1,4 +1,5 @@
 /// High-performance binary heap priority queue and bounded top-k collector.
+library;
 
 /// Callback comparing two elements: returns negative if a < b, positive if a > b, zero if equal.
 typedef PriorityComparator<T> = int Function(T a, T b);
@@ -158,7 +159,7 @@ class BoundedPriorityQueue<T> {
       _heap[_size] = element;
       _upHeap(_size);
       return null;
-    } else if (_size > 0 && _comparator(element, _heap[1]!) > 0) {
+    } else if (_size > 0 && _comparator(element, _heap[1] as T) > 0) {
       final evicted = _heap[1];
       _heap[1] = element;
       _downHeap(1);
@@ -173,7 +174,7 @@ class BoundedPriorityQueue<T> {
     if (_size == 0) {
       throw StateError('Cannot pop from empty BoundedPriorityQueue');
     }
-    final result = _heap[1]!;
+    final result = _heap[1] as T;
     _heap[1] = _heap[_size];
     _heap[_size] = null;
     _size--;
@@ -203,9 +204,9 @@ class BoundedPriorityQueue<T> {
 
   void _upHeap(int start) {
     var i = start;
-    final node = _heap[i]!;
+    final node = _heap[i] as T;
     var j = i >> 1;
-    while (j > 0 && _comparator(node, _heap[j]!) < 0) {
+    while (j > 0 && _comparator(node, _heap[j] as T) < 0) {
       _heap[i] = _heap[j];
       i = j;
       j = j >> 1;
@@ -215,18 +216,18 @@ class BoundedPriorityQueue<T> {
 
   void _downHeap(int start) {
     var i = start;
-    final node = _heap[i]!;
+    final node = _heap[i] as T;
     var j = i << 1;
     var k = j + 1;
-    if (k <= _size && _comparator(_heap[k]!, _heap[j]!) < 0) {
+    if (k <= _size && _comparator(_heap[k] as T, _heap[j] as T) < 0) {
       j = k;
     }
-    while (j <= _size && _comparator(_heap[j]!, node) < 0) {
+    while (j <= _size && _comparator(_heap[j] as T, node) < 0) {
       _heap[i] = _heap[j];
       i = j;
       j = i << 1;
       k = j + 1;
-      if (k <= _size && _comparator(_heap[k]!, _heap[j]!) < 0) {
+      if (k <= _size && _comparator(_heap[k] as T, _heap[j] as T) < 0) {
         j = k;
       }
     }

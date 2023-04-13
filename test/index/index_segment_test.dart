@@ -11,8 +11,6 @@ import 'package:corbel/src/index/postings/postings_reader.dart';
 import 'package:corbel/src/index/postings/postings_writer.dart';
 import 'package:corbel/src/index/segment_reader.dart';
 import 'package:corbel/src/index/segment_writer.dart';
-import 'package:corbel/src/index/stored_fields/stored_fields_reader.dart';
-import 'package:corbel/src/index/stored_fields/stored_fields_writer.dart';
 import 'package:corbel/src/storage/directory.dart';
 import 'package:test/test.dart';
 
@@ -208,16 +206,6 @@ void main() {
       final info2 = writer2.flush();
 
       // Merge
-      final merger = SegmentMerger(
-        directory: dir,
-        schema: schema,
-        spec: const MergeSpec(
-          mergedSegmentName: '_merged_0',
-          segmentsToMerge: [],
-        ),
-        deletionVectors: {'_seg_a': del1},
-      );
-
       final customMerger = SegmentMerger(
         directory: dir,
         schema: schema,

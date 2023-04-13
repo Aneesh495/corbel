@@ -1,6 +1,5 @@
 import 'package:corbel/src/index/fst/fst.dart';
 import 'package:corbel/src/storage/directory.dart';
-import 'package:corbel/src/utils/bytes_ref.dart';
 import 'package:test/test.dart';
 
 void main() {

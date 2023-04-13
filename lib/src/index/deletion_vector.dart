@@ -2,7 +2,6 @@ import '../storage/byte_buffer.dart';
 import '../storage/index_input.dart';
 import '../storage/index_output.dart';
 import '../storage/roaring_bitmap.dart';
-import '../storage/vbyte.dart';
 
 /// Tracks soft-deleted document IDs within an index segment using RoaringBitmaps.
 class DeletionVector {
