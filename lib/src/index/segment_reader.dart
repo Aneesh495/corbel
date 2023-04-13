@@ -2,6 +2,7 @@ import '../core/schema.dart';
 import '../storage/directory.dart';
 import '../storage/index_input.dart';
 import '../storage/vbyte.dart';
+import '../vector/vector_index.dart';
 import 'deletion_vector.dart';
 import 'docvalues/binary_doc_values.dart';
 import 'docvalues/numeric_doc_values.dart';
@@ -24,6 +25,7 @@ class SegmentReader {
   final Map<String, NumericDocValues> _numericDocValues = {};
   final Map<String, BinaryDocValues> _binaryDocValues = {};
   final Map<String, SortedSetDocValues> _sortedSetDocValues = {};
+  final Map<String, VectorIndex> _vectorIndices = {};
 
   bool _closed = false;
 
@@ -109,6 +111,20 @@ class SegmentReader {
         dvsIn.close();
       }
     }
+
+    // 5. Load Vector Indices (.cbl_hns) if present
+    if (directory.fileExists('$segName.cbl_hns')) {
+      final hnsIn = directory.openInput('$segName.cbl_hns');
+      try {
+        final numVectorFields = hnsIn.readVInt();
+        for (var i = 0; i < numVectorFields; i++) {
+          final vIndex = VectorIndex.load(hnsIn);
+          _vectorIndices[vIndex.fieldName] = vIndex;
+        }
+      } finally {
+        hnsIn.close();
+      }
+    }
   }
 
   /// Number of live, non-deleted documents in this segment.
@@ -146,6 +162,9 @@ class SegmentReader {
   /// Retrieves columnar SortedSetDocValues for given field.
   SortedSetDocValues? getSortedSetDocValues(String field) =>
       _sortedSetDocValues[field];
+
+  /// Retrieves HNSW vector index for given field.
+  VectorIndex? getVectorIndex(String field) => _vectorIndices[field];
 
   /// Retrieves stored fields document JSON map for [docId].
   Map<String, dynamic> document(int docId) {

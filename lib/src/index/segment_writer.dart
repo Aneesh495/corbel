@@ -5,6 +5,7 @@ import '../core/document.dart';
 import '../core/schema.dart';
 import '../storage/directory.dart';
 import '../utils/bytes_ref.dart';
+import '../vector/vector_index.dart';
 import 'docvalues/binary_doc_values.dart';
 import 'docvalues/numeric_doc_values.dart';
 import 'docvalues/sorted_set_doc_values.dart';
@@ -250,6 +251,32 @@ class SegmentWriter {
     }
     dvsOut.close();
     totalBytes += directory.fileLength('$segmentName.cbl_dvs');
+
+    // 4. Flush Vector Indices (.cbl_hns) if present
+    final vectorFields = schema.fields.values.where((f) => f.type == FieldType.vector).toList();
+    if (vectorFields.isNotEmpty && _storedDocuments.isNotEmpty) {
+      final hnsOut = directory.createOutput('$segmentName.cbl_hns');
+      hnsOut.writeVInt(vectorFields.length);
+      for (final vf in vectorFields) {
+        final dim = vf.vectorDimension ?? 128;
+        final vIndex = VectorIndex(
+          fieldName: vf.name,
+          dimension: dim,
+          metric: vf.vectorMetric,
+        );
+        for (var i = 0; i < _storedDocuments.length; i++) {
+          final rawVec = _storedDocuments[i][vf.name];
+          if (rawVec != null && rawVec is List) {
+            final fList = Float32List.fromList(
+                rawVec.map((e) => (e as num).toDouble()).toList());
+            vIndex.add(i, fList);
+          }
+        }
+        vIndex.flush(hnsOut);
+      }
+      hnsOut.close();
+      totalBytes += directory.fileLength('$segmentName.cbl_hns');
+    }
 
     return SegmentInfo(
       name: segmentName,
