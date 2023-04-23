@@ -128,6 +128,29 @@ class Fst {
     return results;
   }
 
+  /// Traverses all terms in the FST matching [predicate].
+  List<MapEntry<String, int>> searchMatching(bool Function(String term) predicate) {
+    final results = <MapEntry<String, int>>[];
+    final currentBytes = <int>[];
+
+    void dfs(FstState s, int acc) {
+      if (s.isFinal) {
+        final term = utf8.decode(currentBytes);
+        if (predicate(term)) {
+          results.add(MapEntry(term, acc + s.finalOutput));
+        }
+      }
+      for (final arc in s.arcs) {
+        currentBytes.add(arc.label);
+        dfs(arc.target, acc + arc.output);
+        currentBytes.removeLast();
+      }
+    }
+
+    dfs(root, 0);
+    return results;
+  }
+
   /// Serializes FST into output stream.
   void serialize(IndexOutput out) {
     // Collect all reachable states in topological order
