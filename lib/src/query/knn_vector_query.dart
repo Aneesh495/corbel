@@ -135,7 +135,9 @@ class KnnVectorScorer extends Scorer {
   @override
   double score() {
     if (_cursor < 0 || _cursor >= matches.length) return 0.0;
-    final sim = matches[_cursor].similarity as double;
+    final match = matches[_cursor];
+    final dist = (match.distance as num).toDouble();
+    final sim = 1.0 / (1.0 + dist);
     return sim * boost;
   }
 
