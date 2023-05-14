@@ -87,4 +87,7 @@ class SortedSetDocValues {
     }
     return _docOrds[docId];
   }
+
+  /// Alias for [getOrds] providing Lucene-style naming convention.
+  List<int> getOrdinals(int docId) => getOrds(docId);
 }
