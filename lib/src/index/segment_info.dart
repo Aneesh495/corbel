@@ -61,6 +61,27 @@ class SegmentInfo {
     );
   }
 
+  /// Converts segment info metadata to JSON map.
+  Map<String, dynamic> toJson() => {
+        'name': name,
+        'max_doc': maxDoc,
+        'del_count': delCount,
+        'size_bytes': sizeInBytes,
+        'version': version,
+      };
+
+  /// Constructs segment info metadata from JSON map and schema.
+  factory SegmentInfo.fromJson(Map<String, dynamic> json, Schema schema) {
+    return SegmentInfo(
+      name: json['name'] as String,
+      maxDoc: json['max_doc'] as int,
+      delCount: json['del_count'] as int? ?? 0,
+      sizeInBytes: json['size_bytes'] as int? ?? 0,
+      version: json['version'] as int? ?? 1,
+      schema: schema,
+    );
+  }
+
   @override
   String toString() =>
       'SegmentInfo($name, maxDoc: $maxDoc, delCount: $delCount, live: $numDocs)';

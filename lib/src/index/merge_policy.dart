@@ -20,8 +20,16 @@ class MergeSpec {
   });
 }
 
+/// Abstract policy determining when and which segments should be merged.
+abstract class MergePolicy {
+  const MergePolicy();
+
+  /// Evaluates segment topology and selects candidate segments for merging.
+  List<MergeSpec> findMerges(List<SegmentInfo> segments, int nextSegmentIndex);
+}
+
 /// Tiered log-merge policy organizing segments into logarithmic size tiers.
-class TieredMergePolicy {
+class TieredMergePolicy extends MergePolicy {
   /// Maximum number of segments allowed in a tier before triggering a merge.
   final int maxSegmentsPerTier;
 
