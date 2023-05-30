@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import '../core/schema.dart';
 import '../engine/corbel_engine.dart';
+import 'handlers/bulk_handler.dart';
 import 'router.dart';
 
 /// Embedded REST HTTP API server exposing index and search endpoints.
@@ -36,7 +37,10 @@ class CorbelHttpServer {
       });
     });
 
-    // 2. List indices
+    // 2. Streaming NDJSON bulk ingestion
+    _router.post('/_bulk', (req, res, params) => BulkHandler(engine: engine).handle(req, res));
+
+    // 3. List indices
     _router.get('/_cat/indices', (req, res, params) async {
       final names = engine.listIndices();
       final statsList = <Map<String, dynamic>>[];
