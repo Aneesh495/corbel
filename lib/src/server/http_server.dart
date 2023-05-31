@@ -3,6 +3,7 @@ import 'dart:io';
 import '../core/schema.dart';
 import '../engine/corbel_engine.dart';
 import 'handlers/bulk_handler.dart';
+import 'handlers/metrics_handler.dart';
 import 'router.dart';
 
 /// Embedded REST HTTP API server exposing index and search endpoints.
@@ -40,7 +41,11 @@ class CorbelHttpServer {
     // 2. Streaming NDJSON bulk ingestion
     _router.post('/_bulk', (req, res, params) => BulkHandler(engine: engine).handle(req, res));
 
-    // 3. List indices
+    // 3. Prometheus metrics and cluster health
+    _router.get('/_metrics', (req, res, params) async => MetricsHandler(engine: engine).handleMetrics(req, res));
+    _router.get('/_cluster/health', (req, res, params) async => MetricsHandler(engine: engine).handleHealth(req, res));
+
+    // 4. List indices
     _router.get('/_cat/indices', (req, res, params) async {
       final names = engine.listIndices();
       final statsList = <Map<String, dynamic>>[];
