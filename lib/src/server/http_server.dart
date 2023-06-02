@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import '../core/schema.dart';
 import '../engine/corbel_engine.dart';
+import 'dashboard/dashboard_assets.dart';
 import 'handlers/bulk_handler.dart';
 import 'handlers/metrics_handler.dart';
 import 'router.dart';
@@ -38,7 +39,21 @@ class CorbelHttpServer {
       });
     });
 
-    // 2. Streaming NDJSON bulk ingestion
+    // 2. Web management dashboard
+    _router.get('/_dashboard', (req, res, params) async {
+      res.statusCode = HttpStatus.ok;
+      res.headers.contentType = ContentType.html;
+      res.write(DashboardAssets.indexHtml);
+      await res.close();
+    });
+    _router.get('/dashboard', (req, res, params) async {
+      res.statusCode = HttpStatus.ok;
+      res.headers.contentType = ContentType.html;
+      res.write(DashboardAssets.indexHtml);
+      await res.close();
+    });
+
+    // 3. Streaming NDJSON bulk ingestion
     _router.post('/_bulk', (req, res, params) => BulkHandler(engine: engine).handle(req, res));
 
     // 3. Prometheus metrics and cluster health
