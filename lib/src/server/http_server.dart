@@ -28,6 +28,9 @@ class CorbelHttpServer {
 
   CorbelRouter get router => _router;
 
+  /// Bound network port after server starts.
+  int? get actualPort => _server?.port;
+
   void _registerRoutes() {
     // 1. Cluster info root
     _router.get('/', (req, res, params) async {

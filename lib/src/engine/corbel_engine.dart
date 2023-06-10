@@ -122,6 +122,12 @@ class CorbelIndex {
     };
   }
 
+  /// Simulates an abrupt crash without flushing or committing.
+  void crash() {
+    _currentSearcher?.close();
+    _writer.crash();
+  }
+
   /// Closes the index, committing writes and releasing reader handles.
   void close() {
     _currentSearcher?.close();

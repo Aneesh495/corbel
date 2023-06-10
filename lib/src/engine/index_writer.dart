@@ -280,6 +280,12 @@ class IndexWriter {
   /// Returns the deletion vectors mapped by segment name.
   Map<String, DeletionVector> get deletionVectors => Map.unmodifiable(_deletionVectors);
 
+  /// Simulates an abrupt node crash without executing flush or commit.
+  void crash() {
+    _wal?.close();
+    _closed = true;
+  }
+
   /// Closes the writer, committing unwritten segments and releasing all resources.
   void close() {
     if (!_closed) {
