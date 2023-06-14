@@ -46,6 +46,7 @@ class TieredMergePolicy extends MergePolicy {
   });
 
   /// Evaluates segment topology and selects candidate segments for merging.
+  @override
   List<MergeSpec> findMerges(List<SegmentInfo> segments, int nextSegmentIndex) {
     if (segments.length < 2) return [];
 

@@ -3,7 +3,6 @@ import 'package:test/test.dart';
 
 import 'package:corbel/src/analysis/analyzer.dart';
 import 'package:corbel/src/core/document.dart';
-import 'package:corbel/src/core/schema.dart';
 import 'package:corbel/src/index/deletion_vector.dart';
 import 'package:corbel/src/index/postings/postings_reader.dart';
 import 'package:corbel/src/query/boolean_query.dart';
