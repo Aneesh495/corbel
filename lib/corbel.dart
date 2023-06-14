@@ -59,6 +59,16 @@ export 'src/query/term_query.dart';
 export 'src/query/wand_scorer.dart';
 export 'src/query/wildcard_query.dart';
 
+// Positional Span Queries
+export 'src/query/span/span_first_query.dart';
+export 'src/query/span/span_near_query.dart';
+export 'src/query/span/span_not_query.dart';
+export 'src/query/span/span_or_query.dart';
+export 'src/query/span/span_query.dart';
+export 'src/query/span/span_scorer.dart';
+export 'src/query/span/span_term_query.dart';
+export 'src/query/span/spans.dart';
+
 // Columnar Aggregations
 export 'src/aggregation/date_histogram.dart';
 export 'src/aggregation/range_aggregation.dart';
