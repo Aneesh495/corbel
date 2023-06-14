@@ -66,6 +66,14 @@ export 'src/aggregation/stats_aggregation.dart';
 export 'src/aggregation/t_digest.dart';
 export 'src/aggregation/terms_aggregation.dart';
 
+// Spatial and Multidimensional Indexing
+export 'src/spatial/bkd_tree.dart';
+export 'src/spatial/geo_aggregations.dart';
+export 'src/spatial/geo_distance.dart';
+export 'src/spatial/geo_point.dart';
+export 'src/spatial/geo_queries.dart';
+export 'src/spatial/geo_shapes.dart';
+
 // Runtime Engine & Concurrency
 export 'src/concurrency/isolate_pool.dart';
 export 'src/engine/corbel_engine.dart';

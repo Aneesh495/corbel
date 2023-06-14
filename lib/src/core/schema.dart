@@ -29,6 +29,9 @@ enum FieldType {
 
   /// Semi-structured JSON object stored as string or payload.
   json,
+
+  /// Geographic coordinate pair (lat/lon) supporting spatial distance, bounding box, and BKD-tree indexing.
+  geoPoint,
 }
 
 /// Level of inverted index detail captured for a given field.
@@ -210,6 +213,21 @@ class FieldDefinition {
     );
   }
 
+  /// Factory constructor for a geographic coordinate pair (lat/lon).
+  factory FieldDefinition.geoPoint(
+    String name, {
+    bool stored = true,
+    bool indexed = true,
+  }) {
+    return FieldDefinition(
+      name: name,
+      type: FieldType.geoPoint,
+      indexOptions: IndexOptions.none,
+      stored: stored,
+      docValuesType: DocValuesType.binary,
+    );
+  }
+
   /// Checks whether inverted indexing is enabled.
   bool get isIndexed => indexOptions != IndexOptions.none;
 
@@ -339,6 +357,7 @@ class Schema {
           break;
         case FieldType.binary:
         case FieldType.json:
+        case FieldType.geoPoint:
           break;
       }
     }

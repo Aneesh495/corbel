@@ -1,3 +1,4 @@
+import '../spatial/bkd_tree.dart';
 import '../storage/directory.dart';
 import '../storage/index_input.dart';
 import '../vector/vector_index.dart';
@@ -24,6 +25,7 @@ class SegmentReader {
   final Map<String, BinaryDocValues> _binaryDocValues = {};
   final Map<String, SortedSetDocValues> _sortedSetDocValues = {};
   final Map<String, VectorIndex> _vectorIndices = {};
+  final Map<String, BkdTree> _bkdTrees = {};
 
   bool _closed = false;
 
@@ -123,6 +125,20 @@ class SegmentReader {
         hnsIn.close();
       }
     }
+
+    // 6. Load BKD Spatial Trees (.cbl_bkd) if present
+    if (directory.fileExists('$segName.cbl_bkd')) {
+      final bkdIn = directory.openInput('$segName.cbl_bkd');
+      try {
+        final numBkdFields = bkdIn.readVInt();
+        for (var i = 0; i < numBkdFields; i++) {
+          final fieldName = bkdIn.readString();
+          _bkdTrees[fieldName] = BkdTree.readFrom(bkdIn);
+        }
+      } finally {
+        bkdIn.close();
+      }
+    }
   }
 
   /// Number of live, non-deleted documents in this segment.
@@ -163,6 +179,9 @@ class SegmentReader {
 
   /// Retrieves HNSW vector index for given field.
   VectorIndex? getVectorIndex(String field) => _vectorIndices[field];
+
+  /// Retrieves Block KD-Tree spatial index for given field.
+  BkdTree? getBkdTree(String field) => _bkdTrees[field];
 
   /// Retrieves stored fields document JSON map for [docId].
   Map<String, dynamic> document(int docId) {

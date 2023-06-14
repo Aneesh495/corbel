@@ -3,6 +3,8 @@ import 'dart:typed_data';
 import '../analysis/analyzer.dart';
 import '../core/document.dart';
 import '../core/schema.dart';
+import '../spatial/bkd_tree.dart';
+import '../spatial/geo_point.dart';
 import '../storage/directory.dart';
 import '../vector/vector_index.dart';
 import 'docvalues/binary_doc_values.dart';
@@ -142,7 +144,12 @@ class SegmentWriter {
         while (list.length < docId) {
           list.add(Uint8List(0));
         }
-        if (value is Uint8List) {
+        if (value is GeoPoint) {
+          final bd = ByteData(16)
+            ..setFloat64(0, value.lat)
+            ..setFloat64(8, value.lon);
+          list.add(bd.buffer.asUint8List());
+        } else if (value is Uint8List) {
           list.add(value);
         } else if (value is Float32List) {
           list.add(Uint8List.sublistView(value));
@@ -275,6 +282,32 @@ class SegmentWriter {
       }
       hnsOut.close();
       totalBytes += directory.fileLength('$segmentName.cbl_hns');
+    }
+
+    // 5. Flush BKD Spatial Trees (.cbl_bkd) if present
+    final geoFields = schema.fields.values
+        .where((f) => f.type == FieldType.geoPoint)
+        .toList();
+    if (geoFields.isNotEmpty && _storedDocuments.isNotEmpty) {
+      final bkdOut = directory.createOutput('$segmentName.cbl_bkd');
+      bkdOut.writeVInt(geoFields.length);
+      for (final gf in geoFields) {
+        bkdOut.writeString(gf.name);
+        final points = <BkdPoint>[];
+        for (var i = 0; i < _storedDocuments.length; i++) {
+          final raw = _storedDocuments[i][gf.name];
+          if (raw is Map) {
+            final pt = GeoPoint.fromJson(Map<String, dynamic>.from(raw));
+            points.add(BkdPoint(i, [pt.lat, pt.lon]));
+          } else if (raw is GeoPoint) {
+            points.add(BkdPoint(i, [raw.lat, raw.lon]));
+          }
+        }
+        final bkd = BkdTree.build(points);
+        bkd.writeTo(bkdOut);
+      }
+      bkdOut.close();
+      totalBytes += directory.fileLength('$segmentName.cbl_bkd');
     }
 
     return SegmentInfo(

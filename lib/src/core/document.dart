@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
+import '../spatial/geo_point.dart';
 import 'schema.dart';
 
 /// Single typed field within a document.
@@ -65,6 +66,11 @@ class Field {
     return Field(name: name, type: FieldType.binary, value: bytes);
   }
 
+  /// Factory helper for geographic coordinate field.
+  factory Field.geoPoint(String name, GeoPoint point) {
+    return Field(name: name, type: FieldType.geoPoint, value: point);
+  }
+
   /// Factory helper for JSON field.
   factory Field.json(String name, Object jsonObject) {
     return Field(name: name, type: FieldType.json, value: jsonObject);
@@ -97,6 +103,15 @@ class Field {
   Uint8List? get binaryValue {
     if (value is Uint8List) return value as Uint8List;
     if (value is List<int>) return Uint8List.fromList(value as List<int>);
+    return null;
+  }
+
+  /// Geographic coordinate value representation.
+  GeoPoint? get geoPointValue {
+    if (value is GeoPoint) return value as GeoPoint;
+    if (value is Map<String, dynamic>) {
+      return GeoPoint.fromJson(value as Map<String, dynamic>);
+    }
     return null;
   }
 
@@ -202,6 +217,16 @@ class Document {
         case FieldType.json:
           fields.add(Field.json(name, val as Object));
           break;
+        case FieldType.geoPoint:
+          if (val is GeoPoint) {
+            fields.add(Field.geoPoint(name, val));
+          } else if (val is Map<String, dynamic>) {
+            fields.add(Field.geoPoint(name, GeoPoint.fromJson(val)));
+          } else if (val is Map) {
+            fields.add(Field.geoPoint(
+                name, GeoPoint.fromJson(Map<String, dynamic>.from(val))));
+          }
+          break;
       }
     }
 
@@ -222,6 +247,9 @@ class Document {
 
   /// Retrieves vector value for field.
   Float32List? getVector(String name) => _fieldMap[name]?.vectorValue;
+
+  /// Retrieves geographic coordinate value for field.
+  GeoPoint? getGeoPoint(String name) => _fieldMap[name]?.geoPointValue;
 
   /// Retrieves binary value for field.
   Uint8List? getBinary(String name) => _fieldMap[name]?.binaryValue;
