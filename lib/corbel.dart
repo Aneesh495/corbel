@@ -69,6 +69,12 @@ export 'src/query/span/span_scorer.dart';
 export 'src/query/span/span_term_query.dart';
 export 'src/query/span/spans.dart';
 
+// Suggest and Spell Checking
+export 'src/suggest/completion_suggester.dart';
+export 'src/suggest/direct_spell_checker.dart';
+export 'src/suggest/suggest_models.dart';
+export 'src/suggest/symspell.dart';
+
 // Columnar Aggregations
 export 'src/aggregation/date_histogram.dart';
 export 'src/aggregation/range_aggregation.dart';
