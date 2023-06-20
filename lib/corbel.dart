@@ -21,6 +21,13 @@ export 'src/storage/roaring_bitmap.dart';
 export 'src/storage/vbyte.dart';
 export 'src/storage/wal.dart';
 
+// Storage Buffer Pool and Page Cache
+export 'src/storage/page_cache/buffer_pool_manager.dart';
+export 'src/storage/page_cache/page_models.dart';
+export 'src/storage/page_cache/paged_index_input.dart';
+export 'src/storage/page_cache/paged_index_output.dart';
+export 'src/storage/page_cache/replacer.dart';
+
 // Text Analysis Pipeline
 export 'src/analysis/analyzer.dart';
 export 'src/analysis/token.dart';
