@@ -108,6 +108,9 @@ export 'src/engine/snapshot.dart';
 // Cluster and Distributed Replication
 export 'src/cluster/raft.dart';
 export 'src/cluster/segment_sync.dart';
+export 'src/cluster/sharding/hash_ring.dart';
+export 'src/cluster/sharding/scatter_gather_searcher.dart';
+export 'src/cluster/sharding/shard_routing.dart';
 
 // Server and Native Acceleration
 export 'src/native/simd_ffi.dart';
