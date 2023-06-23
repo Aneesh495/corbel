@@ -8,6 +8,9 @@ export 'src/core/document.dart';
 export 'src/core/exceptions.dart';
 export 'src/core/schema.dart';
 export 'src/core/version.dart';
+export 'src/utils/bit_vector.dart';
+export 'src/utils/bytes_ref.dart';
+export 'src/utils/priority_queue.dart';
 
 // Storage and Encoding
 export 'src/storage/byte_buffer.dart';
@@ -45,6 +48,11 @@ export 'src/vector/distance.dart';
 export 'src/vector/hnsw_graph.dart';
 export 'src/vector/quantization.dart';
 export 'src/vector/vector_index.dart';
+
+// Vector IVF-PQ and K-Means
+export 'src/vector/ivf_pq/ivf_pq_index.dart';
+export 'src/vector/ivf_pq/kmeans.dart';
+export 'src/vector/ivf_pq/product_quantizer.dart';
 
 // Query Engine and Ranking
 export 'src/query/boolean_query.dart';

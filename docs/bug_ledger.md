@@ -46,3 +46,12 @@ This ledger documents internal bugs uncovered during development, including thei
 - **Root Cause**: `KnnVectorScorer.score()` assumed elements returned by `VectorIndex.search()` had a `.similarity` field, whereas `NeighborPair` stores `.distance`.
 - **Resolution**: Computed bounded similarity score dynamically from distance: `final sim = 1.0 / (1.0 + dist)`.
 - **Regression Test**: `test/bugs/bug_04_knn_scorer_neighbor_pair_test.dart`
+
+---
+
+### Bug 05: BoundedPriorityQueue Distance Minimization Comparator Inversion
+- **Component**: `lib/src/vector/ivf_pq/ivf_pq_index.dart`
+- **Symptom**: Inverted File Product Quantization (IVF-PQ) searches returned the furthest documents instead of nearest neighbors.
+- **Root Cause**: `BoundedPriorityQueue` is an internal min-heap that tracks the top-k highest scoring elements by evicting the root element when `comparator(candidate, root) > 0`. When minimizing geometric distance, the candidate with the smallest distance is superior. Passing the standard `a.distance.compareTo(b.distance)` caused the queue to evict candidates with small distances and preserve large distances.
+- **Fix**: Inverted the comparator to `(a, b) => b.distance.compareTo(a.distance)` so the candidate with the largest distance sits at the root and is evicted whenever a candidate with a smaller distance is inserted.
+- **Regression Test**: `test/bugs/bug_05_bounded_priority_queue_distance_comparator_test.dart`
