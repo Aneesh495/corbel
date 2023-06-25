@@ -33,8 +33,26 @@ export 'src/storage/page_cache/replacer.dart';
 
 // Text Analysis Pipeline
 export 'src/analysis/analyzer.dart';
+export 'src/analysis/filters/ascii_folding_filter.dart';
+export 'src/analysis/filters/length_filter.dart';
+export 'src/analysis/filters/lowercase_filter.dart';
+export 'src/analysis/filters/phonetic_filter.dart';
+export 'src/analysis/filters/shingle_filter.dart';
+export 'src/analysis/filters/stemmer_filter.dart';
+export 'src/analysis/filters/stop_filter.dart';
+export 'src/analysis/filters/synonym_filter.dart';
+export 'src/analysis/filters/token_filter.dart';
+export 'src/analysis/phonetic/double_metaphone.dart';
+export 'src/analysis/phonetic/metaphone.dart';
+export 'src/analysis/phonetic/soundex.dart';
 export 'src/analysis/token.dart';
 export 'src/analysis/token_stream.dart';
+export 'src/analysis/tokenizers/cjk_tokenizer.dart';
+export 'src/analysis/tokenizers/code_tokenizer.dart';
+export 'src/analysis/tokenizers/ngram_tokenizer.dart';
+export 'src/analysis/tokenizers/pattern_tokenizer.dart';
+export 'src/analysis/tokenizers/standard_tokenizer.dart';
+export 'src/analysis/tokenizers/whitespace_tokenizer.dart';
 
 // Index Subsystems
 export 'src/index/deletion_vector.dart';
