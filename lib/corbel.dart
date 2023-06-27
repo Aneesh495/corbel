@@ -102,6 +102,11 @@ export 'src/query/span/span_scorer.dart';
 export 'src/query/span/span_term_query.dart';
 export 'src/query/span/spans.dart';
 
+// Custom Function Scoring and Learning to Rank (LTR)
+export 'src/query/function_score/function_score_query.dart';
+export 'src/query/function_score/ltr_model.dart';
+export 'src/query/function_score/score_functions.dart';
+
 // Suggest and Spell Checking
 export 'src/suggest/completion_suggester.dart';
 export 'src/suggest/direct_spell_checker.dart';
