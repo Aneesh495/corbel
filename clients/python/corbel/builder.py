@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 class Query:
     """Fluent query builder constructing Corbel AST JSON search specifications."""
@@ -69,6 +69,120 @@ class Query:
                 "rrf_k": rrf_k,
             }
         }
+
+    @staticmethod
+    def geo_distance(field: str, lat: float, lon: float, distance_km: float) -> Dict[str, Any]:
+        return {
+            "geo_distance": {
+                field: {
+                    "lat": lat,
+                    "lon": lon,
+                    "distance_km": distance_km,
+                }
+            }
+        }
+
+    @staticmethod
+    def geo_bounding_box(
+        field: str,
+        top_left_lat: float,
+        top_left_lon: float,
+        bottom_right_lat: float,
+        bottom_right_lon: float,
+    ) -> Dict[str, Any]:
+        return {
+            "geo_bounding_box": {
+                field: {
+                    "top_left": {"lat": top_left_lat, "lon": top_left_lon},
+                    "bottom_right": {"lat": bottom_right_lat, "lon": bottom_right_lon},
+                }
+            }
+        }
+
+    @staticmethod
+    def geo_polygon(field: str, points: List[Tuple[float, float]]) -> Dict[str, Any]:
+        return {
+            "geo_polygon": {
+                field: {
+                    "points": [{"lat": p[0], "lon": p[1]} for p in points],
+                }
+            }
+        }
+
+    @staticmethod
+    def span_term(field: str, term: str) -> Dict[str, Any]:
+        return {
+            "span_term": {
+                "field": field,
+                "term": term,
+            }
+        }
+
+    @staticmethod
+    def span_near(
+        clauses: List[Dict[str, Any]],
+        slop: int = 0,
+        in_order: bool = True,
+    ) -> Dict[str, Any]:
+        return {
+            "span_near": {
+                "clauses": clauses,
+                "slop": slop,
+                "in_order": in_order,
+            }
+        }
+
+    @staticmethod
+    def span_or(clauses: List[Dict[str, Any]]) -> Dict[str, Any]:
+        return {
+            "span_or": {
+                "clauses": clauses,
+            }
+        }
+
+    @staticmethod
+    def span_not(
+        include: Dict[str, Any],
+        exclude: Dict[str, Any],
+        pre: int = 0,
+        post: int = 0,
+    ) -> Dict[str, Any]:
+        return {
+            "span_not": {
+                "include": include,
+                "exclude": exclude,
+                "pre": pre,
+                "post": post,
+            }
+        }
+
+    @staticmethod
+    def span_first(match: Dict[str, Any], end: int) -> Dict[str, Any]:
+        return {
+            "span_first": {
+                "match": match,
+                "end": end,
+            }
+        }
+
+    @staticmethod
+    def function_score(
+        query: Dict[str, Any],
+        functions: List[Dict[str, Any]],
+        boost_mode: str = "multiply",
+        score_mode: str = "multiply",
+        max_boost: Optional[float] = None,
+        min_score: Optional[float] = None,
+    ) -> Dict[str, Any]:
+        fs: Dict[str, Any] = {
+            "query": query,
+            "functions": functions,
+            "boost_mode": boost_mode,
+            "score_mode": score_mode,
+        }
+        if max_boost is not None: fs["max_boost"] = max_boost
+        if min_score is not None: fs["min_score"] = min_score
+        return {"function_score": fs}
 
     @classmethod
     def bool(cls) -> "BoolQueryBuilder":

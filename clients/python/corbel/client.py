@@ -56,6 +56,9 @@ class CorbelClient:
     def cluster_health(self) -> Dict[str, Any]:
         return self._request("GET", "/_cluster/health")
 
+    def metrics(self) -> Dict[str, Any]:
+        return self._request("GET", "/_metrics")
+
     def list_indices(self) -> List[Dict[str, Any]]:
         res = self._request("GET", "/_cat/indices")
         return res.get("indices", [])
@@ -94,6 +97,34 @@ class CorbelClient:
         else:
             payload["query_ast"] = query
         return self._request("POST", f"/{index}/_search", data=payload)
+
+    def suggest(
+        self,
+        index: str,
+        field: str,
+        prefix: str,
+        size: int = 5,
+        fuzzy: bool = False,
+    ) -> Dict[str, Any]:
+        payload = {
+            "field": field,
+            "prefix": prefix,
+            "size": size,
+            "fuzzy": fuzzy,
+        }
+        return self._request("POST", f"/{index}/_suggest", data=payload)
+
+    def spellcheck(
+        self,
+        index: str,
+        text: str,
+        max_edit_distance: int = 2,
+    ) -> Dict[str, Any]:
+        payload = {
+            "text": text,
+            "max_edit_distance": max_edit_distance,
+        }
+        return self._request("POST", f"/{index}/_spellcheck", data=payload)
 
     def bulk(self, actions: List[Dict[str, Any]]) -> Dict[str, Any]:
         ndjson_body = self.bulk_helper.format_ndjson(actions)
