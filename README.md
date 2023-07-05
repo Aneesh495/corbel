@@ -1,10 +1,10 @@
 # Corbel
 
-[![Dart CI](https://github.com/Aneesh495/corbel/actions/workflows/dart.yml/badge.svg)](https://github.com/Aneesh495/corbel)
+[![CI](https://github.com/Aneesh495/corbel/actions/workflows/ci.yml/badge.svg)](https://github.com/Aneesh495/corbel)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Dart 3.0+](https://img.shields.io/badge/Dart-3.0%2B-0175C2.svg)](https://dart.dev)
 
-Corbel is a high-throughput, embedded search and vector-relational retrieval engine written from scratch in Dart with C SIMD acceleration. It unifies Lucene-style inverted index pipelines, minimal acyclic Finite State Transducers (FST), columnar DocValues, RoaringBitmaps, and Hierarchical Navigable Small World (HNSW) vector graphs into an autonomous runtime.
+Corbel is a high-throughput, embedded search and vector-relational retrieval engine written from scratch in Dart with C SIMD acceleration. It unifies Lucene-style inverted index pipelines, minimal acyclic Finite State Transducers (FST), columnar DocValues, RoaringBitmaps, Block KD-Trees (BKD), and Hierarchical Navigable Small World (HNSW) vector graphs into an autonomous runtime.
 
 ---
 
@@ -23,6 +23,7 @@ Corbel is a high-throughput, embedded search and vector-relational retrieval eng
 |  - Write-Ahead Log (WAL) Durability|    |  - AST Query Compilation      |
 |  - Generational Deletion Vectors   |    |  - WAND Early Dynamic Pruning |
 |  - Tiered Log-Merge Compaction     |    |  - RRF Hybrid Fusion Scorer   |
+|  - 2Q Buffer Pool Page Eviction    |    |  - LTR Two-Stage Reranker     |
 +------------------------------------+    +-------------------------------+
        |                                                    |
        +-------------------------+--------------------------+
@@ -38,12 +39,16 @@ Corbel is a high-throughput, embedded search and vector-relational retrieval eng
 |  | Stored (.cbl_fdt)|  | HNSW (.cbl_vec)   |  | Tombs (.cbl_del)     |  |
 |  | Block Compressed |  | Cosine / L2 SIMD  |  | RoaringBitmap        |  |
 |  +------------------+  +-------------------+  +----------------------+  |
+|  +------------------+  +-------------------+  +----------------------+  |
+|  | BKD-Tree(.cbl_bkd|  | IVF-PQ (.cbl_ivf) |  | Spans & Phonetics    |  |
+|  | Spatial Geodesics|  | Centroid Clusters |  | Soundex / Metaphone  |  |
+|  +------------------+  +-------------------+  +----------------------+  |
 +-------------------------------------------------------------------------+
                                  |
                                  v
 +-------------------------------------------------------------------------+
 |                           Storage Abstraction                           |
-|               (RAMDirectory, DiskDirectory, Memory Mapped)              |
+|           (RAMDirectory, DiskDirectory, 2Q Buffer Pool Manager)         |
 +-------------------------------------------------------------------------+
 ```
 
@@ -66,27 +71,53 @@ Corbel is a high-throughput, embedded search and vector-relational retrieval eng
   - `StatsAggregation`: Numerically stable one-pass Welford algorithm computing count, min, max, sum, average, variance, and standard deviation.
   - `TDigest`: Online streaming percentile sketch estimating $p50, p90, p99$ quantiles with bounded memory.
 
-### 3. Vector Search (HNSW) and Native SIMD
+### 3. Vector Retrieval (HNSW & IVF-PQ) and Native SIMD
 - **Hierarchical Navigable Small World (HNSW)**: Multi-layer graph topology supporting Cosine Similarity, Squared Euclidean (L2), Dot Product, and Manhattan distance metrics.
+- **Inverted File Product Quantization (IVF-PQ)**: Scalable vector indexing using K-Means centroid clustering and residual subvector quantization with Asymmetric Distance Computation (ADC) lookup tables.
 - **Vector Quantization**:
   - **SQ8 (Scalar Quantization)**: 8-bit dynamic min-max normalization reducing vector memory footprint by 75%.
-  - **Product Quantization (PQ)**: Orthogonal subspace decomposition with asymmetric distance computation (ADC).
+  - **Product Quantization (PQ)**: Orthogonal subspace decomposition with ADC distance tables.
 - **Native SIMD C Acceleration**: Polyglot C implementation utilizing ARM Neon and x86 AVX2 vector intrinsics via `dart:ffi` with transparent pure Dart fallbacks.
 
-### 4. Query Engine and Ranking Models
+### 4. Spatial Indexing and Geodesics (BKD-Tree)
+- **Block KD-Tree (BKD-Tree)**: Multi-dimensional spatial tree splitting points across alternating coordinate axes into leaf blocks (`.cbl_bkd`) for fast bounding box and k-NN search.
+- **Geodesic Distance Kernels**: Haversine (spherical) and Vincenty (ellipsoidal WGS-84) distance formulas.
+- **Geohash Encoding**: Radix-32 hierarchical spatial index prefixes.
+- **Spatial Queries & Aggregations**: `GeoDistanceQuery`, `GeoBoundingBoxQuery` (with antimeridian wrap-around), `GeoPolygonQuery` (ray casting with holes), and `GeoHashGridAggregation`.
+
+### 5. Positional Span Queries
+- **Spans Engine**: Full positional tracking supporting `nextDoc()`, `advance()`, and `nextStartPosition()`.
+- **Query Types**: `SpanTermQuery`, `SpanNearQuery` (ordered or unordered within slop), `SpanOrQuery`, `SpanNotQuery` (pre and post exclusion windows), and `SpanFirstQuery`.
+- **SpanScorer**: Rewards tighter, more compact spans with higher relevance scores.
+
+### 6. Text Analysis and Phonetics
+- **Phonetic Encoders**: American Soundex, Lawrence Philips' Metaphone, and Double Metaphone (primary and alternate codes for non-English names).
+- **Tokenizers & Filters**: `StandardTokenizer`, `CJKTokenizer` (overlapping bi-grams), `CodeTokenizer` (camelCase and snake_case decomposition), `PorterStemmer`, `SnowballStemmer`, `SynonymFilter`, and `ShingleFilter`.
+
+### 7. Query Engine and Ranking Models
 - **Ranking**: Okapi BM25 with term frequency saturation ($k_1$) and field length normalization ($b$); Classic TF-IDF vector space scoring.
-- **Query AST**: `TermQuery`, `PhraseQuery` (with positional slop tolerance), `PrefixQuery`, `WildcardQuery`, `FuzzyQuery`, `NumericRangeQuery`, `BooleanQuery` (MUST, SHOULD, MUST_NOT, FILTER), `DisjunctionMaxQuery`, `KnnVectorQuery` (with pre-filtering), and `HybridQuery` (combining lexical and vector search via Reciprocal Rank Fusion).
+- **Custom Function Scoring**: `FieldValueFactorFunction` (log, sqrt, reciprocal modifiers) and `DecayFunction` (Gauss, Exponential, Linear decay curves).
+- **Learning to Rank (LTR)**: Two-stage candidate reranking using Gradient Boosted Decision Trees (`GbdtModel`) and linear models (`LinearLtrModel`).
 - **Execution Engine**:
   - `QueryOptimizer`: Flattens nested clauses, eliminates redundancies, resolves contradictions, and orders conjunctions by posting list cost.
   - `WandScorer`: Implements Weak AND (WAND) dynamic pruning, computing cumulative upper-bound scores to leapfrog non-competitive documents.
   - `Highlighter`: Extracts relevance-scored text passages with sentence boundary snapping and HTML formatting tags.
 
-### 5. Storage Durability and Distributed Consensus
-- **Write-Ahead Log (WAL)**: CRC32C-protected transaction log providing durability and automatic crash recovery replay on restart.
-- **Raft Consensus**: Complete distributed consensus state machine with randomized election timeouts, leader election, and log replication.
-- **TCP Segment Replication**: Binary TCP network protocol streaming segment files from leader to replicas with chunked hashing.
+### 8. Suggesters and Spell Checking
+- **CompletionSuggester**: Fast weighted prefix Trie and fuzzy Levenshtein autocomplete.
+- **SymSpell**: Symmetric Delete algorithm for ultra-fast single-word and compound sentence spelling correction.
+- **DirectSpellChecker**: Live FST term dictionary query rewriting for "did-you-mean" suggestions without duplicate memory overhead.
 
-### 6. HTTP REST API and Web Management Dashboard
+### 9. Storage Durability and 2Q Buffer Pool
+- **Write-Ahead Log (WAL)**: CRC32C-protected transaction log providing durability and automatic crash recovery replay on restart.
+- **Buffer Pool Manager**: Slotted page frames managed by a Two-Queue (2Q) replacement policy that eliminates scan pollution from bulk index operations.
+
+### 10. Distributed Sharding and Raft Consensus
+- **ConsistentHashRing**: Murmur3 32-bit consistent hashing with virtual node replication for balanced sharding.
+- **ScatterGatherSearcher**: Scatter-gather query distribution, global min-heap top-k merging, and distributed facet consolidation across shards.
+- **Raft Consensus & TCP Replication**: Role state machine, leader election, replicated log, and chunked TCP segment synchronization.
+
+### 11. HTTP REST API, Python SDK, and Web Dashboard
 - Embedded HTTP REST API compatible with standard search conventions:
   - `GET /_cat/indices`: List collection statistics.
   - `POST /:index/_doc`: Index document.
@@ -95,6 +126,7 @@ Corbel is a high-throughput, embedded search and vector-relational retrieval eng
   - `GET /_metrics`: Prometheus exposition metrics.
   - `GET /_cluster/health`: Cluster health diagnostics.
   - `GET /_dashboard`: Single-page web console for interactive search exploration and health monitoring.
+- Official typed Python SDK with query builders, bulk streaming indexer, and unittest suite.
 
 ---
 
@@ -197,10 +229,11 @@ print(results)
 
 ```
 corbel/
+├── .github/workflows/ci.yml         # GitHub Actions automated test & analysis workflow
 ├── bin/
 │   └── corbel.dart                  # Command-line interface and interactive REPL
 ├── clients/
-│   └── python/                      # Official Python client SDK and bulk helpers
+│   └── python/                      # Official Python client SDK, bulk helpers, and tests
 ├── docs/
 │   ├── architecture.md              # Deep technical subsystem architecture
 │   ├── storage_specification.md     # Bit-level segment file format specifications
@@ -210,23 +243,27 @@ corbel/
 │   ├── CMakeLists.txt               # Native SIMD build configuration
 │   ├── include/corbel_simd.h        # C SIMD vector kernel headers
 │   └── src/corbel_simd.c            # ARM Neon and AVX2 vector implementations
+├── tool/
+│   └── audit_em_dashes.py           # Automated em-dash and en-dash static validator
 ├── lib/
 │   ├── corbel.dart                  # Root library export
 │   └── src/
 │       ├── aggregation/             # Columnar facet aggregations & T-Digest
-│       ├── analysis/                # Tokenizers, stemmers, and analyzers
-│       ├── cluster/                 # Raft consensus & TCP segment replication
+│       ├── analysis/                # Tokenizers, stemmers, and Double Metaphone
+│       ├── cluster/                 # Raft consensus, TCP replication, and sharding
 │       ├── concurrency/             # Isolate worker pool for multi-core search
 │       ├── core/                    # Document model, field types, and schema
 │       ├── engine/                  # IndexWriter, IndexSearcher, and CorbelEngine
 │       ├── index/                   # FST, Postings, DocValues, and Compaction
 │       ├── native/                  # Dart FFI bindings for C SIMD acceleration
-│       ├── query/                   # Query AST, BM25, WAND, and Highlighter
+│       ├── query/                   # BM25, Spans, WAND, FunctionScore, and LTR
 │       ├── server/                  # HTTP REST server, Bulk NDJSON, Dashboard
-│       ├── storage/                 # Directory, Codecs, RoaringBitmap, and WAL
-│       └── vector/                  # HNSW graph index, distances, and SQ8/PQ
+│       ├── spatial/                 # BKD-Tree, Geohash, Haversine, and Vincenty
+│       ├── storage/                 # 2Q Buffer Pool, Codecs, RoaringBitmap, WAL
+│       ├── suggest/                 # SymSpell, Direct FST, and Weighted Trie
+│       └── vector/                  # HNSW graph, IVF-PQ, K-Means, and SQ8/PQ
 ├── bench/                           # Micro-benchmark suites (Indexing, Search, Vectors)
-└── test/                            # Unit, bug regression, and integration test suites
+└── test/                            # Comprehensive unit, bug, and integration tests
 ```
 
 ---

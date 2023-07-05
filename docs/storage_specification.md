@@ -17,6 +17,8 @@ All multi-byte numeric values are encoded in Little-Endian byte order unless pre
 | `.cbl_fdt` | Stored Fields Data | Block-compressed JSON document records (64 docs per block) |
 | `.cbl_vec` | Vector Index | HNSW multi-layer adjacency lists and float vector buffers |
 | `.cbl_del` | Deletion Vector | RoaringBitmap serialization of soft-deleted document IDs |
+| `.cbl_bkd` | Spatial BKD-Tree | Block KD-Tree multi-dimensional spatial index and point blocks |
+| `.cbl_ivf` | IVF-PQ Index | Inverted file centroid clusters and PQ residual codebooks |
 | `corbel.wal` | Write-Ahead Log | CRC32C-guarded transactional append log for durability |
 
 ---
@@ -183,5 +185,100 @@ Crash resilience log recording uncommitted document insertions, updates, and del
 |   Frame Checksum: CRC32C over LSN + OpCode + Payload      |
 +-----------------------------------------------------------+
 | Frame 1 ... Frame N                                       |
++-----------------------------------------------------------+
+```
+
+---
+
+## 8. Spatial Block KD-Tree Index (`.cbl_bkd`)
+
+Stores multi-dimensional spatial points (latitude, longitude, elevations) partitioned into balanced k-dimensional bounding boxes with leaf point blocks for fast bounding box, polygon, and distance range queries.
+
+```
++-----------------------------------------------------------+
+| Magic Bytes: 0x43424B44 ('CBKD') (Uint32)                 |
+| Format Version: 1 (Uint32)                                |
+| Number of Dimensions (VInt, e.g. 2 for lat/lon)           |
+| Max Leaf Node Capacity (VInt, e.g. 1024 points)           |
+| Total Point Count (VInt)                                  |
++-----------------------------------------------------------+
+| Global Bounding Box:                                      |
+|   Min Coordinates: Float64[numDimensions]                 |
+|   Max Coordinates: Float64[numDimensions]                 |
++-----------------------------------------------------------+
+| Tree Node Blocks (Pre-Order Recursive Traversal):         |
+|   IsLeaf Flag (Byte: 0x01 = Leaf, 0x00 = Inner)           |
+|   If Inner Node:                                          |
+|     Split Dimension (VInt)                                |
+|     Split Value (Float64)                                 |
+|     Left Subtree Byte Offset (VLong)                      |
+|     Right Subtree Byte Offset (VLong)                     |
+|   If Leaf Node:                                           |
+|     Point Count (VInt)                                    |
+|     Per-Point Records:                                    |
+|       Internal Doc ID (VInt)                              |
+|       Point Coordinates: Float64[numDimensions]           |
++-----------------------------------------------------------+
+```
+
+---
+
+## 9. Inverted File Product Quantization Vector Index (`.cbl_ivf`)
+
+Stores coarse centroid clusters (Voronoi cells) and product-quantized residual codebooks for compressed vector retrieval.
+
+```
++-----------------------------------------------------------+
+| Magic Bytes: 0x43424956 ('CBIV') (Uint32)                 |
+| Format Version: 1 (Uint32)                                |
+| Vector Dimension (VInt, e.g. 128)                         |
+| Number of Centroids / Clusters (VInt, e.g. 256)           |
+| Number of Sub-Vectors M (VInt, e.g. 16)                   |
+| Codebook Centroids K (VInt, e.g. 256)                     |
+| Sub-Vector Dimension D = Dimension / M (VInt, e.g. 8)     |
++-----------------------------------------------------------+
+| Coarse Centroid Buffer:                                   |
+|   Centroid 0: Float32[dimension] ... Centroid K-1         |
++-----------------------------------------------------------+
+| Product Quantizer Codebook Table:                         |
+|   Subspace 0: Centroid 0..255 Float32[subDimension]       |
+|   Subspace 1..M-1                                         |
++-----------------------------------------------------------+
+| Inverted File Posting Lists (One per Coarse Centroid):    |
+|   Centroid ID (VInt)                                      |
+|   Assigned Document Count (VInt)                          |
+|   Document Entries:                                       |
+|     Internal Doc ID (VInt)                                |
+|     Quantized Residual Codes: Uint8[M]                    |
++-----------------------------------------------------------+
+```
+
+---
+
+## 10. Buffer Pool Page Frame Layout
+
+Slotted 4 KB or 8 KB memory-mapped page frame layout managed by the `BufferPoolManager` with 2Q (Two-Queue) cache replacement:
+
+```
++-----------------------------------------------------------+
+| Page Header (32 Bytes):                                   |
+|   Page ID (Int64, 8 bytes: SegmentHash: 4B | PageNum: 4B) |
+|   LSN (Log Sequence Number, Int64, 8 bytes)               |
+|   Pin Count (Int32, 4 bytes)                              |
+|   IsDirty Flag (Byte, 1 byte)                             |
+|   Free Space Offset (Uint16, 2 bytes)                     |
+|   Slot Count (Uint16, 2 bytes)                            |
+|   Checksum: CRC32C (Uint32, 4 bytes)                      |
+|   Reserved / Alignment Padding (7 bytes)                  |
++-----------------------------------------------------------+
+| Slot Directory (Grows downwards from header):             |
+|   Slot 0: [Offset: Uint16 | Length: Uint16]               |
+|   Slot 1: [Offset: Uint16 | Length: Uint16]               |
+|   ... Slot S                                              |
++-----------------------------------------------------------+
+| Free Space Window                                         |
++-----------------------------------------------------------+
+| Data Records (Grows upwards from bottom of page):         |
+|   Record R ... Record 0                                   |
 +-----------------------------------------------------------+
 ```
